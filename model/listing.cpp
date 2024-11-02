@@ -35,6 +35,23 @@ namespace Database
   std::string Listing::get_tags() { return tags; }
   std::string Listing::get_address() { return address; }
 
+  crow::json::wvalue Listing::to_json()
+  {
+    crow::json::wvalue json;
+    json["id"] = id;
+    json["listing_name"] = listing_name;
+    json["user_id"] = user_id;
+    json["address"] = address;
+    json["listing_location"] = listing_location;
+    json["description"] = description;
+    json["tags"] = tags;
+    json["price"] = price;
+    json["created_at"] = created_at;
+    json["updated_at"] = updated_at;
+
+    return json;
+  }
+
   void create_listing(sql::Connection *con, Listing lst)
   {
     sql::PreparedStatement *pstmt = con->prepareStatement("INSERT INTO listings (listing_name, user_id,address,listing_location,price,description,tags) VALUES (?, ?, ?,?,?,?,?)");
@@ -58,39 +75,57 @@ namespace Database
     delete pstmt;
   }
 
-  Listing get_listing(sql::Connection *con, std::string id) {
-    try {
-        // Use smart pointers for resource management
-        std::unique_ptr<sql::PreparedStatement> ps(con->prepareStatement("SELECT * FROM listings WHERE id = ?"));
-        ps->setString(1, id);
-        
-        std::unique_ptr<sql::ResultSet> res(ps->executeQuery());
+  Listing get_listing(sql::Connection *con, std::string id)
+  {
+    try
+    {
+      std::unique_ptr<sql::PreparedStatement> ps(con->prepareStatement(
+          "SELECT * FROM listings WHERE id = ?"));
+      ps->setString(1, id);
 
-        if (res->next()) {
-            // Directly construct Listing from ResultSet
-            return Listing(
-                res->getString("id"),
-                res->getString("listing_name"),
-                res->getString("user_id"),
-                res->getString("address"),
-                res->getString("listing_location"),
-                res->getString("description"),
-                res->getString("tags"),
-                res->getInt64("price"),
-                res->getString("created_at"),
-                res->getString("updated_at")
-            );
-        } else {
-            throw std::runtime_error("Listing not found.");
-        }
-    } catch (const sql::SQLException &e) {
-        std::cerr << "SQL error: " << e.what() << '\n';
-        throw std::runtime_error("Error getting listing details"); 
-    } catch (const std::exception &e) {
-        std::cerr << "Error: " << e.what() << '\n';
-        throw std::runtime_error("Error getting listing details"); 
+      std::unique_ptr<sql::ResultSet> res(ps->executeQuery());
+
+      if (res->next())
+      {
+        // Handle potential NULL values
+        std::string listing_name = res->isNull("listing_name") ? "" : res->getString("listing_name");
+        std::string user_id = res->isNull("user_id") ? "" : res->getString("user_id");
+        std::string address = res->isNull("address") ? "" : res->getString("address");
+        std::string listing_location = res->isNull("listing_location") ? "" : res->getString("listing_location");
+        std::string description = res->isNull("description") ? "" : res->getString("description");
+        std::string tags = res->isNull("tags") ? "" : res->getString("tags");
+        int64_t price = res->isNull("price") ? 0 : res->getInt64("price");
+        std::string created_at = res->isNull("created_at") ? "" : res->getString("created_at");
+        std::string updated_at = res->isNull("updated_at") ? "" : res->getString("updated_at");
+
+        return Listing(
+            id, // Use the id we already have
+            listing_name,
+            user_id,
+            address,
+            listing_location,
+            description,
+            tags,
+            price,
+            created_at,
+            updated_at);
+      }
+      else
+      {
+        throw std::runtime_error("No listing found with the given ID");
+      }
     }
-}
+    catch (const sql::SQLException &e)
+    {
+      std::cerr << "SQL error: " << e.what() << '\n';
+      throw; // Rethrow to preserve the original error
+    }
+    catch (const std::exception &e)
+    {
+      std::cerr << "Error: " << e.what() << '\n';
+      throw;
+    }
+  }
   void update_listing(sql::Connection *con, Listing lst)
   {
     std::string stmt = "UPDATE listings SET ";

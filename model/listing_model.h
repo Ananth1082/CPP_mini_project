@@ -34,21 +34,7 @@ namespace Database
     std::string get_address();
     std::string get_tags();
     
-    crow::json::wvalue to_json() const {
-        crow::json::wvalue json;
-        json["id"] = id;
-        json["listing_name"] = listing_name;
-        json["user_id"] = user_id;
-        json["address"] = address;
-        json["listing_location"] = listing_location;
-        json["description"] = description;
-        json["tags"] = tags;
-        json["price"] = price;
-        json["created_at"] = created_at;
-        json["updated_at"] = updated_at;
-
-        return json;
-    }
+    crow::json::wvalue to_json();
   };
 
   void create_listing(sql::Connection *con, Listing listing);

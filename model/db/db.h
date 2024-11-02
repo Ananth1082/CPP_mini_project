@@ -2,7 +2,7 @@
 #include <mysql_connection.h>
 
 namespace Database {
-  void connect_to_db(sql::Connection* con);
+  void connect_to_db(sql::Connection*& con);
 }
 
 #endif

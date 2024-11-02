@@ -56,21 +56,37 @@ void migrations(sql::Connection *con)
 {
   executeSQLFile(con, "schema.sql");
 }
-
-void Database::connect_to_db(sql::Connection* con)
+void Database::connect_to_db(sql::Connection*& con)  // Note the & here
 {
-  sql::mysql::MySQL_Driver *driver;
+    try {
+        sql::mysql::MySQL_Driver *driver = sql::mysql::get_mysql_driver_instance();
+        if (!driver) {
+            throw std::runtime_error("Failed to get MySQL driver instance");
+        }
 
-  driver = sql::mysql::get_mysql_driver_instance();
-  con = driver->connect("tcp://127.0.0.1:3306", "root", "root_password");
-  sql::Statement *useStatement = con->createStatement();
-  try
-  {
-    useStatement->execute("use real_estate_db");
-  }
-  catch (const std::exception &e)
-  {
-    std::cerr << "DB doesnt exist" << e.what() << '\n';
-  }
-  delete useStatement;
+        con = driver->connect("tcp://127.0.0.1:3306", "root", "root_password");
+        if (!con) {
+            throw std::runtime_error("Failed to establish database connection");
+        }
+
+        std::unique_ptr<sql::Statement> useStatement(con->createStatement());
+        useStatement->execute("use real_estate_db");
+    }
+    catch (const sql::SQLException& e) {
+        std::cerr << "SQL Error: " << e.what() << '\n';
+        std::cerr << "SQL State: " << e.getSQLState() << '\n';
+        if (con) {
+            delete con;
+            con = nullptr;
+        }
+        throw;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << '\n';
+        if (con) {
+            delete con;
+            con = nullptr;
+        }
+        throw;
+    }
 }

@@ -1,51 +1,115 @@
 #include "crow.h"
 #include "model/listing_model.h"
 #include "model/db/db.h"
-int main()
-{
+#include <memory>
+#include <mutex>
+
+int main() {
+    std::cout << "Starting crow server...\n";
     crow::SimpleApp app;
-    int count = 0;
-    sql::Connection *con;
-    Database::connect_to_db(con);
-
-    // serve html pages
-    //   CROW_ROUTE(app, "/")
-    //   ([]()
-    //    {
-    //        auto page = crow::mustache::load_text("index.html");
-    //        return page; });
-
-    //    //return string
-    //    CROW_ROUTE(app, "/about").methods(crow::HTTPMethod::POST)
-    //     ([]() {
-    //         return "This is the about page.";
-    //     });
-
-    //     //Dynamic routes
-    //     CROW_ROUTE(app, "/user/<string>/<string>")
-    //     ([](std::string userid,std::string userAddress) {
-    //         return "Hello user" + userid + "\nAddress: "+userAddress;
-    //     });
-    // CROW_ROUTE(app,"/listings").methods(crow::HTTPMethod::GET)([](){
-
-    // });
-    CROW_ROUTE(app, "/listing/<string>").methods(crow::HTTPMethod::GET)([con](const crow::request &req, crow::response &res, const std::string &id)
-    {
+    
+    const int POOL_SIZE = 10;
+    std::vector<std::unique_ptr<sql::Connection>> connection_pool;
+    std::mutex pool_mutex;
+    
     try {
-        Database::Listing lst = Database::get_listing(con, id);
-        res.write(lst.to_json().dump()); // Assuming to_json() returns a crow::json::wvalue
-        res.end();
+        for(int i = 0; i < POOL_SIZE; i++) {
+            sql::Connection* con = nullptr;
+            Database::connect_to_db(con);
+            if (con != nullptr) {
+                connection_pool.push_back(std::unique_ptr<sql::Connection>(con));
+            }
+        }
     } catch (const std::exception& e) {
-        std::cerr << e.what() << '\n';
-        res.code = 404; // Not Found
-        res.write("No listing found");
+        std::cerr << "Failed to initialize connection pool: " << e.what() << '\n';
+        return 1;
+    }
+
+    auto get_connection = [&]() -> sql::Connection* {
+        std::lock_guard<std::mutex> lock(pool_mutex);
+        if (!connection_pool.empty()) {
+            sql::Connection* con = connection_pool.back().release();
+            connection_pool.pop_back();
+            return con;
+        }
+        sql::Connection* con = nullptr;
+        Database::connect_to_db(con);
+        return con;
+    };
+
+    auto return_connection = [&](sql::Connection* con) {
+        if (con != nullptr) {
+            std::lock_guard<std::mutex> lock(pool_mutex);
+            connection_pool.push_back(std::unique_ptr<sql::Connection>(con));
+        }
+    };
+
+    try {
+        auto con = get_connection();
+        if (con) {
+            Database::Listing lst = Database::get_listing(con, "018be850-985e-11ef-861c-0242ac110002");
+            std::cout << "Test listing name: " << lst.get_listing_name() << '\n';
+            return_connection(con);
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Test query failed: " << e.what() << '\n';
+    }
+
+    CROW_ROUTE(app, "/listing/<string>")
+    .methods(crow::HTTPMethod::GET)
+    ([&](const crow::request& req, crow::response& res, const std::string& id) {
+        auto con = get_connection();
+        if (!con) {
+            res.code = 500;
+            res.write("Database connection failed");
+            res.end();
+            return;
+        }
+
+        try {
+            Database::Listing lst = Database::get_listing(con, id);
+            res.code = 200;
+            res.write(lst.to_json().dump());
+        } catch (const std::exception& e) {
+            std::cerr << "Error processing request: " << e.what() << '\n';
+            res.code = 404;
+            res.write("No listing found");
+        }
+
+        return_connection(con);
         res.end();
-    } });
-    // CROW_ROUTE(app,"/listing").methods(crow::HTTPMethod::POST);
-    // CROW_ROUTE(app,"/listing/").methods(crow::HTTPMethod::PUT);
-    // CROW_ROUTE(app,"/listing").methods(crow::HTTPMethod::DELETE);
+    });
+
+    CROW_ROUTE(app, "/listing")
+    .methods(crow::HTTPMethod::POST)
+    ([&](const crow::request& req, crow::response& res) {
+        auto con = get_connection();
+        if (!con) {
+            res.code = 500;
+            res.write("Database connection failed");
+            res.end();
+            return;
+        }
+
+        try {
+            std::string body = req.body;
+            res.code = 201;
+            res.write("Created");
+        } catch (const std::exception& e) {
+            std::cerr << "Error processing request: " << e.what() << '\n';
+            res.code = 400;
+            res.write("Bad request");
+        }
+
+        return_connection(con);
+        res.end();
+    });
 
     app.port(18080)
-        .multithreaded()
-        .run();
+       .multithreaded()
+       .run();
+
+    connection_pool.clear();
+    
+    return 0;
 }
