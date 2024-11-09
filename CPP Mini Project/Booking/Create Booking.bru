@@ -1,0 +1,20 @@
+meta {
+  name: Create Booking
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:18080/booking
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "user_id":"a4b92f61-9e57-11ef-a37b-0242ac110002",
+    "listing_id":"f76a95e8-9e5c-11ef-a37b-0242ac110002",
+    "remarks":"asdfskjdf snkdf sdf",
+    "status":"sdjfsdf fjsdf dsjf dsf sdfs"
+  }
+}

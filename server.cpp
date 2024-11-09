@@ -354,7 +354,7 @@ int main()
 
                 try
                 {
-                    Database::delete_user(con, booking_id);
+                    Database::delete_booking(con, booking_id);
                     res.code = 200;
                     res.write("deleted booking");
                 }

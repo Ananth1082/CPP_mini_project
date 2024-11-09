@@ -1,0 +1,15 @@
+meta {
+  name: Get booking details
+  type: http
+  seq: 4
+}
+
+get {
+  url: http://localhost:18080/booking/:bookingId
+  body: none
+  auth: none
+}
+
+params:path {
+  bookingId: 38374d96-9e5d-11ef-a37b-0242ac110002
+}

@@ -34,7 +34,7 @@ namespace Database
 
   void create_booking(sql::Connection *con, Booking bkg)
   {
-    sql::PreparedStatement *pstmt = con->prepareStatement("INSERT INTO bookings (user_id, listing_id,status,remark) VALUES (?, ?, ?,?)");
+    sql::PreparedStatement *pstmt = con->prepareStatement("INSERT INTO bookings (user_id, listing_id,status,remarks) VALUES (?, ?, ?,?)");
     try
     {
 
@@ -91,7 +91,6 @@ namespace Database
         std::string user_id = res->isNull("user_id") ? "" : res->getString("user_id");
         std::string remarks = res->isNull("remarks") ? "" : res->getString("remarks");
         std::string status = res->isNull("status") ? "" : res->getString("status");
-        std::string description = res->isNull("description") ? "" : res->getString("description");
         std::string created_at = res->isNull("created_at") ? "" : res->getString("created_at");
         std::string updated_at = res->isNull("updated_at") ? "" : res->getString("updated_at");
 
