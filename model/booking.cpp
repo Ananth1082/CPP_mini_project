@@ -18,6 +18,20 @@ namespace Database
   std::string Booking::get_status() { return status; }
   std::string Booking::get_remark() { return remarks; }
 
+  crow::json::wvalue Booking::to_json() const
+  {
+    crow::json::wvalue json;
+    json["id"] = id;
+    json["user_id"]=user_id;
+    json["listing_id"] = listing_id;
+    json["remarks"] = remarks;
+    json["status"] = status;
+    json["created_at"] = created_at;
+    json["updated_at"] = updated_at;
+
+    return json;
+  }
+
   void create_booking(sql::Connection *con, Booking bkg)
   {
     sql::PreparedStatement *pstmt = con->prepareStatement("INSERT INTO bookings (user_id, listing_id,status,remark) VALUES (?, ?, ?,?)");
@@ -61,6 +75,50 @@ namespace Database
       throw std::runtime_error("Booking not found.");
     }
   }
+
+  std::vector<Booking> get_all_bookings(sql::Connection *con)
+  {
+    try
+    {
+      std::vector<Booking> bookings;
+      std::unique_ptr<sql::PreparedStatement> ps(con->prepareStatement(
+          "SELECT * FROM bookings"));
+      std::unique_ptr<sql::ResultSet> res(ps->executeQuery());
+      while (res->next())
+      {
+        std::string booking_id = res->isNull("id") ? "" : res->getString("id");
+        std::string listing_id = res->isNull("listing_id") ? "" : res->getString("listing_id");
+        std::string user_id = res->isNull("user_id") ? "" : res->getString("user_id");
+        std::string remarks = res->isNull("remarks") ? "" : res->getString("remarks");
+        std::string status = res->isNull("status") ? "" : res->getString("status");
+        std::string description = res->isNull("description") ? "" : res->getString("description");
+        std::string created_at = res->isNull("created_at") ? "" : res->getString("created_at");
+        std::string updated_at = res->isNull("updated_at") ? "" : res->getString("updated_at");
+
+        bookings.push_back(
+            Booking(
+                booking_id,
+                user_id,
+                listing_id,
+                remarks,
+                status,
+                created_at,
+                updated_at));
+      }
+      return bookings;
+    }
+    catch (const sql::SQLException &e)
+    {
+      std::cerr << "SQL error: " << e.what() << '\n';
+      throw; // Rethrow to preserve the original error
+    }
+    catch (const std::exception &e)
+    {
+      std::cerr << "Error: " << e.what() << '\n';
+      throw;
+    }
+  }
+
   void delete_booking(sql::Connection *con, std::string id)
   {
     try
