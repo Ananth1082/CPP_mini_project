@@ -70,7 +70,7 @@ int main()
     }
     CROW_ROUTE(app, "/listing/<string>")
         .methods(crow::HTTPMethod::GET)([&](const crow::request &req, crow::response &res, const std::string &id)
-                                        {
+    {
         auto con = get_connection();
 
         try {
@@ -119,6 +119,10 @@ int main()
         return_connection(con);
         res.end(); });
 
+    
+    
+    
+    
     app.port(18080)
         .multithreaded()
         .run();

@@ -1,0 +1,23 @@
+meta {
+  name: Create Listing
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:18080/listing
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "listing_name":"",
+    "user_id":"",
+    "address":"",
+    "listing_location":"",
+    "description":"",
+    "tags":"",
+    "price":100000
+  }
+}
