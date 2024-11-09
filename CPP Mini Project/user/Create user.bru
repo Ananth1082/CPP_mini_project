@@ -1,0 +1,19 @@
+meta {
+  name: Create user
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:18080/user
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "user_name":"Listing 2",
+    "user_location":"asdfskjdf snkdf sdf",
+    "phone_number":"dskjfskjdfnkjsfd"
+  }
+}

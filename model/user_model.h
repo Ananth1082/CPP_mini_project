@@ -10,6 +10,8 @@
 #include <mysql_driver.h>
 #include <mysql_connection.h>
 #include <cppconn/statement.h>
+#include "crow.h"
+
 namespace Database
 {
   class User
@@ -24,10 +26,13 @@ namespace Database
     std::string get_user_name();
     std::string get_phone_number();
     std::string get_user_location();
+
+    crow::json::wvalue to_json() const;
   };
 
   void create_user(sql::Connection *con, User user);
   User get_user(sql::Connection *con, std::string id);
+  std::vector<User> get_all_users(sql::Connection *con); 
   void update_user(sql::Connection *con, User user);
   void delete_user(sql::Connection *con, std::string id);
 }

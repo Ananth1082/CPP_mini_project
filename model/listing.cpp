@@ -35,7 +35,7 @@ namespace Database
   std::string Listing::get_tags() { return tags; }
   std::string Listing::get_address() { return address; }
 
-  crow::json::wvalue Listing::to_json()
+  crow::json::wvalue Listing::to_json() const
   {
     crow::json::wvalue json;
     json["id"] = id;
@@ -75,6 +75,53 @@ namespace Database
     delete pstmt;
   }
 
+  std::vector<Listing> get_all_listings(sql::Connection *con)
+  {
+    try
+    {
+      std::vector<Listing> listings;
+      std::unique_ptr<sql::PreparedStatement> ps(con->prepareStatement(
+          "SELECT * FROM listings"));
+      std::unique_ptr<sql::ResultSet> res(ps->executeQuery());
+      while(res->next()) {
+        std::string listing_id = res->isNull("id")?"": res->getString("id");
+        std::string listing_name = res->isNull("listing_name") ? "" : res->getString("listing_name");
+        std::string user_id = res->isNull("user_id") ? "" : res->getString("user_id");
+        std::string address = res->isNull("address") ? "" : res->getString("address");
+        std::string listing_location = res->isNull("listing_location") ? "" : res->getString("listing_location");
+        std::string description = res->isNull("description") ? "" : res->getString("description");
+        std::string tags = res->isNull("tags") ? "" : res->getString("tags");
+        int64_t price = res->isNull("price") ? 0 : res->getInt64("price");
+        std::string created_at = res->isNull("created_at") ? "" : res->getString("created_at");
+        std::string updated_at = res->isNull("updated_at") ? "" : res->getString("updated_at");
+
+          listings.push_back(
+            Listing(
+            listing_id,
+            listing_name,
+            user_id,
+            address,
+            listing_location,
+            description,
+            tags,
+            price,
+            created_at,
+            updated_at)
+          );
+      }
+      return listings;
+    }
+    catch (const sql::SQLException &e)
+    {
+      std::cerr << "SQL error: " << e.what() << '\n';
+      throw; // Rethrow to preserve the original error
+    }
+    catch (const std::exception &e)
+    {
+      std::cerr << "Error: " << e.what() << '\n';
+      throw;
+    }
+  }
   Listing get_listing(sql::Connection *con, std::string id)
   {
     try

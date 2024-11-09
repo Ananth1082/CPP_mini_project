@@ -1,4 +1,5 @@
 #include "user_model.h"
+
 namespace Database
 {
   User::User(std::string id, std::string user_name, std::string phone_number, std::string user_location, std::string created_at, std::string updated_at)
@@ -25,6 +26,19 @@ namespace Database
   std::string User::get_user_name() { return user_name; }
   std::string User::get_phone_number() { return phone_number; }
   std::string User::get_user_location() { return user_location; }
+
+  crow::json::wvalue User::to_json() const
+  {
+    crow::json::wvalue json;
+    json["id"] = id;
+    json["user_name"] = user_name;
+    json["phone_number"] =phone_number ;
+    json["user_location"] = user_location;
+    json["created_at"] = created_at;
+    json["updated_at"] = updated_at;
+    
+    return json;
+  }
   void create_user(sql::Connection *con, User user)
   {
     sql::PreparedStatement *pstmt = con->prepareStatement("INSERT INTO users (user_name, phone_number,user_location) VALUES (?, ?, ?)");
@@ -64,6 +78,46 @@ namespace Database
     else
     {
       throw std::runtime_error("User not found.");
+    }
+  }
+
+  std::vector<User> get_all_users(sql::Connection *con)
+  {
+    try
+    {
+      std::vector<User> users;
+      std::unique_ptr<sql::PreparedStatement> ps(con->prepareStatement(
+          "SELECT * FROM users"));
+      std::unique_ptr<sql::ResultSet> res(ps->executeQuery());
+      while(res->next()) {
+        std::string id = res->isNull("id")?"": res->getString("id");
+        std::string user_name = res->isNull("user_name") ? "" : res->getString("user_name");
+        std::string user_location = res->isNull("user_location") ? "" : res->getString("user_location");
+        std::string phone_number = res->isNull("phone_number") ? "" : res->getString("phone_number");
+        std::string created_at = res->isNull("created_at") ? "" : res->getString("created_at");
+        std::string updated_at = res->isNull("updated_at") ? "" : res->getString("updated_at");
+
+          users.push_back(
+            User(
+            id,
+            user_name,
+            phone_number,
+            user_location,
+            created_at,
+            updated_at)
+          );
+      }
+      return users;
+    }
+    catch (const sql::SQLException &e)
+    {
+      std::cerr << "SQL error: " << e.what() << '\n';
+      throw; // Rethrow to preserve the original error
+    }
+    catch (const std::exception &e)
+    {
+      std::cerr << "Error: " << e.what() << '\n';
+      throw;
     }
   }
   void update_user(sql::Connection *con, User user)

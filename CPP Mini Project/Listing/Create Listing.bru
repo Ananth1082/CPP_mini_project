@@ -1,0 +1,23 @@
+meta {
+  name: Create Listing
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:18080/listing
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "listing_name":"Listing 2",
+    "user_id":"e6096f0c-985d-11ef-861c-0242ac110002",
+    "address":"zjd adsjdf sdjf sdf",
+    "listing_location":"asdfskjdf snkdf sdf",
+    "description":"sdjfsdf fjsdf dsjf dsf sdfs",
+    "tags":"thasnfdsf,sddfhdsfdsfs,sddfsdfns",
+    "price":100000
+  }
+}

@@ -1,9 +1,24 @@
 #include "crow.h"
 #include "model/listing_model.h"
+#include "model/user_model.h"
 #include "model/db/db.h"
 #include <memory>
 #include <mutex>
 
+template <typename T>
+crow::json::wvalue vector_to_json(const std::vector<T> &objects)
+{
+    crow::json::wvalue json_array;
+    json_array = crow::json::wvalue::list();
+
+    int index = 0;
+    for (const auto &obj : objects)
+    {
+        json_array[index++] = obj.to_json();
+    }
+
+    return json_array;
+}
 int main()
 {
     std::cout << "Starting crow server...\n";
@@ -68,27 +83,149 @@ int main()
     {
         std::cerr << "Test query failed: " << e.what() << '\n';
     }
+    CROW_ROUTE(app, "/user/<string>")
+        .methods(crow::HTTPMethod::GET)(
+            [&](const crow::request &req, crow::response &res, std::string id)
+            {
+                auto con = get_connection();
+
+                try
+                {
+                    Database::User user = Database::get_user(con, id);
+                    res.code = 200;
+                    res.write(user.to_json().dump());
+                }
+                catch (const std::exception &e)
+                {
+                    std::cerr << "Error processing request: " << e.what() << '\n';
+                    res.code = 404;
+                    res.write("No user found");
+                }
+
+                return_connection(con);
+                res.end();
+            });
+     CROW_ROUTE(app, "/user")
+        .methods(crow::HTTPMethod::GET)(
+            [&](const crow::request &req, crow::response &res)
+            {
+                auto con = get_connection();
+
+                try
+                {
+                    auto users = Database::get_all_users(con);
+                    res.code = 200;
+                    res.write(vector_to_json(users).dump());
+                }
+                catch (const std::exception &e)
+                {
+                    std::cerr << "Error processing request: " << e.what() << '\n';
+                    res.code = 404;
+                    res.write("No users found");
+                }
+
+                return_connection(con);
+                res.end();
+            });
+    CROW_ROUTE(app, "/listing")
+        .methods(crow::HTTPMethod::GET)(
+            [&](const crow::request &req, crow::response &res)
+            {
+                auto con = get_connection();
+                try
+                {
+                    auto listings = Database::get_all_listings(con);
+                    res.code = 200;
+                    res.write(vector_to_json(listings).dump());
+                }
+                catch (const std::exception &e)
+                {
+                    std::cerr << "Error processing request: " << e.what() << '\n';
+                    res.code = 404;
+                    res.write("No listing found");
+                }
+                return_connection(con);
+                res.end();
+            });
+
     CROW_ROUTE(app, "/listing/<string>")
-        .methods(crow::HTTPMethod::GET)([&](const crow::request &req, crow::response &res, const std::string &id)
-    {
+        .methods(crow::HTTPMethod::GET)(
+            [&](const crow::request &req, crow::response &res, const std::string &id)
+            {
+                auto con = get_connection();
+
+                try
+                {
+                    Database::Listing lst = Database::get_listing(con, id);
+                    res.code = 200;
+                    res.write(lst.to_json().dump());
+                }
+                catch (const std::exception &e)
+                {
+                    std::cerr << "Error processing request: " << e.what() << '\n';
+                    res.code = 404;
+                    res.write("No listing found");
+                }
+
+                return_connection(con);
+                res.end();
+            });
+    CROW_ROUTE(app, "/user")
+        .methods(crow::HTTPMethod::POST)(
+            [&](const crow::request &req, crow::response &res)
+            {
         auto con = get_connection();
 
         try {
-            Database::Listing lst = Database::get_listing(con, id);
-            res.code = 200;
-            res.write(lst.to_json().dump());
+            crow::json::rvalue req_body = crow::json::load(req.body);
+            if(!req_body.has("user_name")) {
+                res.code=400;
+                res.write("Missing required fields");
+                res.end();
+                return;
+            }
+            Database::User new_user(
+            req_body["user_name"].s(),
+            req_body["phone_number"].s(),
+            req_body["user_location"].s());
+            Database::create_user(con, new_user);
+            res.code = 201;
+            res.write("Created");
         } catch (const std::exception& e) {
             std::cerr << "Error processing request: " << e.what() << '\n';
-            res.code = 404;
-            res.write("No listing found");
+            res.code = 400;
+            res.write("Bad request");
         }
 
         return_connection(con);
         res.end(); });
 
+    CROW_ROUTE(app, "/user/<string>")
+        .methods(crow::HTTPMethod::DELETE)(
+            [&](const crow::request &req, crow::response &res, const std::string user_id)
+            {
+                auto con = get_connection();
+
+                try
+                {
+                    Database::delete_user(con, user_id);
+                    res.code = 200;
+                    res.write("deleted user");
+                }
+                catch (const std::exception &e)
+                {
+                    std::cerr << "Error processing request: " << e.what() << '\n';
+                    res.code = 404;
+                    res.write("No user found");
+                }
+                return_connection(con);
+                res.end();
+            });
+
     CROW_ROUTE(app, "/listing")
-        .methods(crow::HTTPMethod::POST)([&](const crow::request &req, crow::response &res)
-                                         {
+        .methods(crow::HTTPMethod::POST)(
+            [&](const crow::request &req, crow::response &res)
+            {
         auto con = get_connection();
 
         try {
@@ -118,11 +255,28 @@ int main()
 
         return_connection(con);
         res.end(); });
+    CROW_ROUTE(app, "/listing/<string>")
+        .methods(crow::HTTPMethod::DELETE)(
+            [&](const crow::request &req, crow::response &res, const std::string lisitng_id)
+            {
+                auto con = get_connection();
 
-    
-    
-    
-    
+                try
+                {
+                    Database::delete_listing(con, lisitng_id);
+                    res.code = 200;
+                    res.write("deleted listing");
+                }
+                catch (const std::exception &e)
+                {
+                    std::cerr << "Error processing request: " << e.what() << '\n';
+                    res.code = 404;
+                    res.write("No listing found");
+                }
+                return_connection(con);
+                res.end();
+            });
+
     app.port(18080)
         .multithreaded()
         .run();

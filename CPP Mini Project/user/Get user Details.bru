@@ -1,0 +1,15 @@
+meta {
+  name: Get user Details
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://localhost:18080/listing/:userId
+  body: none
+  auth: none
+}
+
+params:path {
+  userId: 
+}
