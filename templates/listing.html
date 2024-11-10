@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listings - Booking System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5; /* Light nude background */
+            margin: 0;
+            padding: 0;
+            color: #3e2723; /* Dark brown text */
+        }
+        header {
+            background-color: #8d6e63; /* Warm brown header */
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .back-link {
+    display: inline-block;
+    text-decoration: none;
+    color: #6d4c41; /* Dark brown color */
+    font-size: 16px;
+    padding: 10px 20px;
+    border: 2px solid #6d4c41; /* Dark brown border */
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s, transform 0.3s;
+}
+
+.back-link:hover {
+    background-color: #8d6e63; /* Lighter brown background */
+    color: white; /* White text on hover */
+    transform: scale(1.05); /* Slightly scale the button on hover */
+}
+
+        .listing-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .listing-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd; /* Light border */
+        }
+        .listing-item:last-child {
+            border-bottom: none;
+        }
+        .listing-item h3 {
+            margin: 0;
+            font-size: 20px;
+            color: #8d6e63; /* Warm brown */
+        }
+        .listing-item p {
+            margin: 5px 0;
+            color: #555; /* Subtle gray for descriptions */
+        }
+        .listing-item .price {
+            font-weight: bold;
+            color: #3e2723; /* Dark brown for prices */
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Available Services</h1>
+    </header>
+    <div class="listing-container">
+        <div class="listing-item">
+            <h3>Service A</h3>
+            <p>A detailed description of Service A goes here. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+            <p class="price">$50.00</p>
+        </div>
+        <div class="listing-item">
+            <h3>Service B</h3>
+            <p>A detailed description of Service B goes here. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+            <p class="price">$70.00</p>
+        </div>
+        <div class="listing-item">
+            <h3>Service C</h3>
+            <p>A detailed description of Service C goes here. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+            <p class="price">$30.00</p>
+        </div>
+    </div>
+    <a href="index.html" class="back-link">BACK</a>
+
+</body>
+</html>

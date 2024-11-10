@@ -21,6 +21,7 @@ crow::json::wvalue vector_to_json(const std::vector<T> &objects)
 
     return json_array;
 }
+
 int main()
 {
     std::cout << "Starting crow server...\n";
